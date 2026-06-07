@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AuditMe — Ship Code That Doesn't Break</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #060608;
+    --surface: #0d0d12;
+    --border: #1a1a28;
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,0.08);
+    --green-mid: rgba(0,255,136,0.18);
+    --red: #ff3d3d;
+    --red-dim: rgba(255,61,61,0.08);
+    --yellow: #ffd166;
+    --yellow-dim: rgba(255,209,102,0.08);
+    --text: #dde1f0;
+    --muted: #555570;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* ── Scanline overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Grid background ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Keyframes ── */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes glitch1 {
+    0%,100%{clip-path:inset(0 0 98% 0);transform:translate(-2px,0)}
+    20%{clip-path:inset(30% 0 50% 0);transform:translate(2px,0)}
+    40%{clip-path:inset(60% 0 20% 0);transform:translate(-1px,0)}
+    60%{clip-path:inset(10% 0 80% 0);transform:translate(3px,0)}
+    80%{clip-path:inset(80% 0 5% 0);transform:translate(-2px,0)}
+  }
+  @keyframes glitch2 {
+    0%,100%{clip-path:inset(95% 0 0% 0);transform:translate(2px,0);opacity:0.5}
+    25%{clip-path:inset(20% 0 70% 0);transform:translate(-3px,0)}
+    50%{clip-path:inset(50% 0 30% 0);transform:translate(1px,0)}
+    75%{clip-path:inset(70% 0 10% 0);transform:translate(-2px,0)}
+  }
+  @keyframes scan {
+    0%{top:-10%} 100%{top:110%}
+  }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)}
+  }
+  @keyframes slideIn {
+    from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)}
+  }
+  @keyframes pulse {
+    0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.3)}
+    50%{box-shadow:0 0 0 12px rgba(0,255,136,0)}
+  }
+  @keyframes termType {
+    from{width:0} to{width:100%}
+  }
+  @keyframes flicker {
+    0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.4} 94%{opacity:1} 96%{opacity:0.6} 97%{opacity:1}
+  }
+  @keyframes float {
+    0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)}
+  }
+  @keyframes numberCount {
+    from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)}
+  }
+
+  .fade-up { animation: fadeUp 0.6s ease forwards; }
+  .blink { animation: blink 1s step-end infinite; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 48px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6,6,8,0.85);
+    backdrop-filter: blur(12px);
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--green);
+    display: flex; align-items: center; gap: 8px;
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--muted); }
+
+  .nav-links {
+    display: flex; align-items: center; gap: 28px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--muted); text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); }
+
+  .nav-cta {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    background: var(--green); color: var(--bg);
+    border: none; border-radius: 4px;
+    padding: 8px 18px; cursor: crosshair;
+    letter-spacing: 0.06em;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .nav-cta:hover { background: #00cc6a; transform: translateY(-1px); }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,255,136,0.06) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--green); letter-spacing: 0.15em;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 5px 14px; border-radius: 2px;
+    margin-bottom: 28px;
+    display: inline-block;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(64px, 10vw, 130px);
+    line-height: 0.92;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 8px;
+    animation: fadeUp 0.6s ease 0.2s both;
+    position: relative;
+  }
+
+  .hero-title .glitch-wrap {
+    position: relative; display: inline-block;
+    color: var(--green);
+    animation: flicker 6s infinite;
+  }
+  .hero-title .glitch-wrap::before,
+  .hero-title .glitch-wrap::after {
+    content: attr(data-text);
+    position: absolute; inset: 0;
+    color: var(--green);
+  }
+  .hero-title .glitch-wrap::before {
+    animation: glitch1 4s infinite;
+    color: var(--red);
+    left: 2px;
+  }
+  .hero-title .glitch-wrap::after {
+    animation: glitch2 4s infinite 0.5s;
+    color: #00cfff;
+    left: -2px;
+  }
+
+  .hero-sub {
+    font-family: var(--body); font-size: clamp(16px, 2vw, 20px);
+    color: var(--muted); font-weight: 300;
+    max-width: 540px; line-height: 1.65;
+    margin: 20px auto 40px;
+    animation: fadeUp 0.6s ease 0.35s both;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 500; }
+
+  .hero-actions {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 0.6s ease 0.45s both;
+  }
+
+  .btn-primary {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    background: var(--green); color: var(--bg);
+    border: none; border-radius: 4px; padding: 14px 32px;
+    cursor: crosshair; letter-spacing: 0.08em;
+    transition: all 0.2s;
+    animation: pulse 2.5s infinite;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-primary:hover { background: #00cc6a; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,136,0.25); }
+
+  .btn-ghost {
+    font-family: var(--mono); font-size: 13px;
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 14px 28px; cursor: crosshair;
+    letter-spacing: 0.06em; transition: all 0.2s;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── Terminal block ── */
+  .terminal {
+    margin: 64px auto 0;
+    max-width: 620px; width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,136,0.05);
+    animation: fadeUp 0.7s ease 0.55s both;
+    position: relative;
+  }
+
+  .terminal::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; height: 40px;
+    background: linear-gradient(to bottom, transparent, rgba(0,255,136,0.04));
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+  }
+
+  .terminal-bar {
+    background: #111118;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  .terminal-body {
+    padding: 20px 24px;
+    font-family: var(--mono); font-size: 13px;
+    line-height: 1.8;
+    text-align: left;
+  }
+
+  .t-line { display: block; }
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--text); }
+  .t-out { color: var(--muted); }
+  .t-err { color: var(--red); }
+  .t-warn { color: var(--yellow); }
+  .t-ok { color: var(--green); }
+  .t-cursor { display: inline-block; width: 8px; height: 14px; background: var(--green); vertical-align: middle; animation: blink 1s step-end infinite; margin-left: 2px; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    overflow: hidden;
+  }
+
+  .stat-item {
+    padding: 32px 40px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .stat-item:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: var(--display);
+    font-size: 52px; letter-spacing: 0.02em;
+    color: var(--green); display: block;
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); letter-spacing: 0.1em;
+    margin-top: 6px; display: block;
+  }
+
+  /* ── Section ── */
+  section {
+    position: relative; z-index: 1;
+    padding: 96px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-tag {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--green); letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 0.95; letter-spacing: 0.02em;
+    color: var(--text); margin-bottom: 16px;
+  }
+
+  .section-sub {
+    font-family: var(--body); font-size: 16px;
+    color: var(--muted); max-width: 480px;
+    line-height: 1.7; font-weight: 300;
+  }
+
+  /* ── How it works ── */
+  .steps {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2px; margin-top: 56px;
+    border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+
+  .step {
+    background: var(--surface);
+    padding: 36px 28px;
+    border-right: 1px solid var(--border);
+    transition: background 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .step:last-child { border-right: none; }
+  .step::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .step:hover { background: rgba(0,255,136,0.03); }
+  .step:hover::before { opacity: 1; }
+
+  .step-num {
+    font-family: var(--display); font-size: 48px;
+    color: var(--border); line-height: 1;
+    margin-bottom: 16px; display: block;
+    transition: color 0.3s;
+  }
+  .step:hover .step-num { color: rgba(0,255,136,0.2); }
+
+  .step-title {
+    font-family: var(--mono); font-size: 13px;
+    color: var(--green); margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+  .step-body {
+    font-family: var(--body); font-size: 14px;
+    color: var(--muted); line-height: 1.65; font-weight: 300;
+  }
+
+  /* ── Issues grid ── */
+  .issues-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px; margin-top: 48px;
+  }
+
+  .issue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 20px 22px;
+    transition: all 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .issue-card::after {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  }
+  .issue-card.critical::after { background: var(--red); }
+  .issue-card.warning::after { background: var(--yellow); }
+  .issue-card.good::after { background: var(--green); }
+
+  .issue-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+
+  .issue-badge {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; padding: 3px 8px; border-radius: 3px;
+    margin-bottom: 10px; display: inline-block;
+  }
+  .badge-critical { background: var(--red-dim); color: var(--red); }
+  .badge-warning { background: var(--yellow-dim); color: var(--yellow); }
+  .badge-good { background: var(--green-dim); color: var(--green); }
+
+  .issue-title {
+    font-family: var(--mono); font-size: 13px;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .issue-desc {
+    font-family: var(--body); font-size: 13px;
+    color: var(--muted); line-height: 1.6; font-weight: 300;
+  }
+
+  /* ── Comparison ── */
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-top: 48px;
+  }
+
+  .compare-col {
+    border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+
+  .compare-head {
+    padding: 14px 20px;
+    font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;
+  }
+  .compare-head.bad { background: var(--red-dim); color: var(--red); border-bottom: 1px solid rgba(255,61,61,0.2); }
+  .compare-head.good { background: var(--green-dim); color: var(--green); border-bottom: 1px solid rgba(0,255,136,0.2); }
+
+  .compare-body { padding: 16px 20px; }
+
+  .compare-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--body); font-size: 14px; font-weight: 300;
+  }
+  .compare-item:last-child { border-bottom: none; }
+  .ci-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .ci-text { color: var(--muted); line-height: 1.5; }
+
+  /* ── Pricing ── */
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px; margin-top: 48px;
+  }
+
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 32px 28px;
+    position: relative; transition: all 0.3s;
+  }
+  .price-card.featured {
+    border-color: rgba(0,255,136,0.4);
+    background: rgba(0,255,136,0.03);
+    box-shadow: 0 0 40px rgba(0,255,136,0.06);
+  }
+  .price-card:hover { transform: translateY(-3px); }
+
+  .price-badge {
+    position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: var(--bg);
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; padding: 3px 12px; border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .price-tier {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.1em; margin-bottom: 12px;
+  }
+
+  .price-amount {
+    font-family: var(--display); font-size: 52px; color: var(--text);
+    line-height: 1; margin-bottom: 4px;
+  }
+  .price-period { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+
+  .price-features {
+    list-style: none; margin-bottom: 28px;
+  }
+  .price-features li {
+    font-family: var(--body); font-size: 14px; font-weight: 300;
+    color: var(--muted); padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .price-features li:last-child { border-bottom: none; }
+  .price-features li span { color: var(--green); }
+
+  .price-btn {
+    width: 100%; padding: 12px;
+    font-family: var(--mono); font-size: 12px;
+    letter-spacing: 0.08em; font-weight: 600;
+    border-radius: 4px; cursor: crosshair;
+    border: none; transition: all 0.2s;
+  }
+  .price-btn.outline {
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .price-btn.outline:hover { border-color: var(--green); color: var(--green); }
+  .price-btn.filled { background: var(--green); color: var(--bg); }
+  .price-btn.filled:hover { background: #00cc6a; transform: translateY(-1px); }
+
+  /* ── CTA section ── */
+  .cta-section {
+    position: relative; z-index: 1;
+    padding: 80px 24px 100px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .cta-glow {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 300px;
+    background: radial-gradient(ellipse, rgba(0,255,136,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-title {
+    font-family: var(--display);
+    font-size: clamp(42px, 7vw, 96px);
+    line-height: 0.92; letter-spacing: 0.02em;
+    color: var(--text); margin-bottom: 20px;
+  }
+  .cta-sub {
+    font-family: var(--body); font-size: 17px; font-weight: 300;
+    color: var(--muted); max-width: 400px;
+    margin: 0 auto 40px; line-height: 1.65;
+  }
+
+  /* ── Footer ── */
+  footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 28px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .footer-logo { font-family: var(--mono); font-size: 14px; color: var(--green); }
+
+  .footer-links {
+    display: flex; gap: 24px; list-style: none;
+  }
+  .footer-links a {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); text-decoration: none; letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--green); }
+
+  .footer-copy {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+  }
+
+  /* ── Divider line ── */
+  .divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    position: relative; z-index: 1;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    .compare { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr; }
+    .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">⚡ <span>//</span> auditme</a>
+  <ul class="nav-links">
+    <li><a href="#how">how it works</a></li>
+    <li><a href="#issues">what we catch</a></li>
+    <li><a href="#pricing">pricing</a></li>
+    <li><a href="/login" class="nav-cta">START AUDITING →</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+
+  <div class="hero-tag">// PRODUCTION READINESS ANALYZER</div>
+
+  <h1 class="hero-title">
+    YOUR CODE<br>
+    IS NOT<br>
+    <span class="glitch-wrap" data-text="READY.">READY.</span>
+  </h1>
+
+  <p class="hero-sub">
+    You built it fast. You shipped it fast.<br>
+    But <strong>hardcoded secrets, zero error handling, and missing rate limiting</strong>
+    are ticking time bombs. AuditMe finds them before your users do.
+  </p>
+
+  <div class="hero-actions">
+    <a href="/login" class="btn-primary">⚡ AUDIT MY REPO FREE</a>
+    <a href="#how" class="btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M10 15l5-3-5-3v6z"/></svg>
+      see how it works
+    </a>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot" style="background:#ff5f57"></div>
+      <div class="dot" style="background:#ffbd2e"></div>
+      <div class="dot" style="background:#28ca41"></div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto">auditme — scanning repo</span>
+    </div>
+    <div class="terminal-body">
+      <span class="t-line"><span class="t-prompt">$ </span><span class="t-cmd">auditme scan github.com/yourname/your-saas</span></span>
+      <span class="t-line t-out">  → Fetching 14 key files...</span>
+      <span class="t-line t-out">  → Running AI analysis...</span>
+      <span class="t-line" style="margin-top:8px"><span class="t-out">  SCORE: </span><span style="color:var(--red);font-weight:bold">34 / 100 ⚠ NOT PRODUCTION READY</span></span>
+      <span class="t-line" style="margin-top:8px">
+        <span class="t-err">  🔴 CRITICAL</span><span class="t-out"> — API key hardcoded in /lib/stripe.js:12</span>
+      </span>
+      <span class="t-line">
+        <span class="t-err">  🔴 CRITICAL</span><span class="t-out"> — No error handling on /api/checkout route</span>
+      </span>
+      <span class="t-line">
+        <span class="t-err">  🔴 CRITICAL</span><span class="t-out"> — .env file committed to repo history</span>
+      </span>
+      <span class="t-line">
+        <span class="t-warn">  🟡 WARNING </span><span class="t-out"> — No rate limiting on public endpoints</span>
+      </span>
+      <span class="t-line">
+        <span class="t-warn">  🟡 WARNING </span><span class="t-out"> — console.log(userData) in production code</span>
+      </span>
+      <span class="t-line">
+        <span class="t-ok">  🟢 PASS   </span><span class="t-out"> — Dependencies up to date</span>
+      </span>
+      <span class="t-line" style="margin-top:8px">
+        <span class="t-out">  → </span><span style="color:var(--yellow)">5 issues found. Run </span><span class="t-cmd">auditme fix --all</span><span style="color:var(--yellow)"> to generate diffs.</span>
+      </span>
+      <span class="t-line" style="margin-top:4px">
+        <span class="t-prompt">$ </span><span class="t-cursor"></span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="stat-num">2.4K</span>
+    <span class="stat-label">REPOS AUDITED</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">18K</span>
+    <span class="stat-label">BUGS CAUGHT BEFORE PROD</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num">94%</span>
+    <span class="stat-label">VIBE-CODED REPOS FAIL FIRST AUDIT</span>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-tag">// HOW IT WORKS</div>
+  <h2 class="section-title">THREE STEPS.<br>ZERO EXCUSES.</h2>
+  <p class="section-sub">Paste your GitHub URL. Get a full production readiness report in under 60 seconds.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">01</span>
+      <div class="step-title">CONNECT YOUR REPO</div>
+      <p class="step-body">Paste a public GitHub URL or connect your GitHub account to audit private repos. We read the files that actually matter.</p>
+    </div>
+    <div class="step">
+      <span class="step-num">02</span>
+      <div class="step-title">AI SCANS YOUR CODE</div>
+      <p class="step-body">Our AI engine — powered by Claude or Groq — analyzes your code for security holes, missing error handling, bad env config and more.</p>
+    </div>
+    <div class="step">
+      <span class="step-num">03</span>
+      <div class="step-title">GET A SCORED REPORT</div>
+      <p class="step-body">Every issue ranked by severity. Click any finding to get a plain-English explanation and a copy-ready code diff to fix it instantly.</p>
+    </div>
+    <div class="step">
+      <span class="step-num">04</span>
+      <div class="step-title">SHIP WITH CONFIDENCE</div>
+      <p class="step-body">Fix the criticals, merge the diffs, re-audit until your score hits green. Then ship knowing your code won't blow up at 2am.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WHAT WE CATCH -->
+<section id="issues">
+  <div class="section-tag">// WHAT WE CATCH</div>
+  <h2 class="section-title">THE STUFF THAT<br>KILLS STARTUPS.</h2>
+  <p class="section-sub">94% of vibe-coded apps fail their first audit. Here's what we find every single time.</p>
+
+  <div class="issues-grid">
+    <div class="issue-card critical">
+      <span class="issue-badge badge-critical">🔴 CRITICAL</span>
+      <div class="issue-title">Hardcoded Secrets</div>
+      <p class="issue-desc">API keys, database passwords and tokens committed directly into your source code. One GitHub scraper and you're done.</p>
+    </div>
+    <div class="issue-card critical">
+      <span class="issue-badge badge-critical">🔴 CRITICAL</span>
+      <div class="issue-title">Missing Error Handling</div>
+      <p class="issue-desc">Async functions with no try/catch. API routes that crash the whole server when one request fails. Your users see a blank screen.</p>
+    </div>
+    <div class="issue-card critical">
+      <span class="issue-badge badge-critical">🔴 CRITICAL</span>
+      <div class="issue-title">No Input Validation</div>
+      <p class="issue-desc">User input passed directly to your database or external APIs. One malformed request away from data corruption or injection.</p>
+    </div>
+    <div class="issue-card warning">
+      <span class="issue-badge badge-warning">🟡 WARNING</span>
+      <div class="issue-title">Zero Rate Limiting</div>
+      <p class="issue-desc">Public endpoints with no throttling. A bot can hammer your API all day and rack up your cloud bill or take down your service.</p>
+    </div>
+    <div class="issue-card warning">
+      <span class="issue-badge badge-warning">🟡 WARNING</span>
+      <div class="issue-title">console.log in Production</div>
+      <p class="issue-desc">Debug logs printing user data, tokens or internal state to your server logs. A compliance nightmare and a performance drain.</p>
+    </div>
+    <div class="issue-card warning">
+      <span class="issue-badge badge-warning">🟡 WARNING</span>
+      <div class="issue-title">Missing CORS Config</div>
+      <p class="issue-desc">API wide open to any origin. Any website can make requests on behalf of your users. Cross-site attack vector wide open.</p>
+    </div>
+    <div class="issue-card warning">
+      <span class="issue-badge badge-warning">🟡 WARNING</span>
+      <div class="issue-title">No Environment Validation</div>
+      <p class="issue-desc">Your app boots fine locally but silently fails in production because a required env var is missing. No startup checks at all.</p>
+    </div>
+    <div class="issue-card good">
+      <span class="issue-badge badge-good">🟢 PASS</span>
+      <div class="issue-title">We Celebrate Wins Too</div>
+      <p class="issue-desc">Every passing check is highlighted. Good dependency hygiene, proper .gitignore, health endpoints — we track what you're doing right.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- COMPARISON -->
+<section>
+  <div class="section-tag">// BEFORE VS AFTER</div>
+  <h2 class="section-title">WHAT SHIPPING<br>LOOKS LIKE.</h2>
+  <p class="section-sub">Most vibe coders ship the left column. AuditMe gets you to the right one.</p>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-head bad">✗ WITHOUT AUDITME</div>
+      <div class="compare-body">
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">API key in GitHub, scraped within hours of going public</span></div>
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">First real user crashes your server with an edge case</span></div>
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">Bot hammers your endpoint, $800 Vercel bill overnight</span></div>
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">User data leaking into logs you can't delete</span></div>
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">App works on your machine, silent failure in production</span></div>
+        <div class="compare-item"><span class="ci-icon">💀</span><span class="ci-text">Debugging at 2am with no idea where to start</span></div>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-head good">✓ WITH AUDITME</div>
+      <div class="compare-body">
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">All secrets in .env, validated at startup, never committed</span></div>
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">Every route wrapped with proper error handling and fallbacks</span></div>
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">Rate limiting on all public endpoints, bots blocked</span></div>
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">Zero PII in logs, clean audit trail, GDPR-safe</span></div>
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">Env validated on boot, fails loudly if config is missing</span></div>
+        <div class="compare-item"><span class="ci-icon">✅</span><span class="ci-text">Ship knowing exactly what's solid and what to watch</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-tag">// PRICING</div>
+  <h2 class="section-title">PAY LESS THAN<br>YOUR BUG COSTS.</h2>
+  <p class="section-sub">One missed security issue costs more than a year of AuditMe. Start free.</p>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tier">// FREE</div>
+      <div class="price-amount">$0</div>
+      <div class="price-period">forever, no card needed</div>
+      <ul class="price-features">
+        <li><span>✓</span> 3 public repo audits / month</li>
+        <li><span>✓</span> Full security scan</li>
+        <li><span>✓</span> Scored report</li>
+        <li><span>✓</span> Plain-English fixes</li>
+        <li><span>—</span> Copy-ready diffs</li>
+        <li><span>—</span> Private repos</li>
+      </ul>
+      <button class="price-btn outline">START FOR FREE</button>
+    </div>
+
+    <div class="price-card featured">
+      <div class="price-badge">MOST POPULAR</div>
+      <div class="price-tier">// PRO</div>
+      <div class="price-amount">$12</div>
+      <div class="price-period">per month, cancel anytime</div>
+      <ul class="price-features">
+        <li><span>✓</span> Unlimited audits</li>
+        <li><span>✓</span> Public + private repos</li>
+        <li><span>✓</span> Copy-ready code diffs</li>
+        <li><span>✓</span> PR title + description generated</li>
+        <li><span>✓</span> Audit history</li>
+        <li><span>✓</span> Shareable report links</li>
+      </ul>
+      <button class="price-btn filled">GET PRO →</button>
+    </div>
+
+    <div class="price-card">
+      <div class="price-tier">// TEAM</div>
+      <div class="price-amount">$39</div>
+      <div class="price-period">per month, up to 5 devs</div>
+      <ul class="price-features">
+        <li><span>✓</span> Everything in Pro</li>
+        <li><span>✓</span> 5 team seats</li>
+        <li><span>✓</span> Shared audit dashboard</li>
+        <li><span>✓</span> GitHub PR bot (coming soon)</li>
+        <li><span>✓</span> Priority support</li>
+        <li><span>✓</span> Custom checks</li>
+      </ul>
+      <button class="price-btn outline">GET TEAM</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="section-tag">// READY?</div>
+  <h2 class="cta-title">STOP GUESSING.<br>START <span style="color:var(--green)">SHIPPING.</span></h2>
+  <p class="cta-sub">Paste your GitHub URL. Get your score in 60 seconds. Free, no card required.</p>
+  <a href="/login" class="btn-primary" style="font-size:15px;padding:16px 40px">⚡ AUDIT MY REPO NOW</a>
+  <div style="margin-top:20px;font-family:var(--mono);font-size:11px;color:var(--muted)">
+    No install. No CLI. No config. Just paste and go.
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">⚡ auditme</div>
+  <ul class="footer-links">
+    <li><a href="#">docs</a></li>
+    <li><a href="#">privacy</a></li>
+    <li><a href="#">terms</a></li>
+    <li><a href="#">twitter</a></li>
+    <li><a href="#">github</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 AuditMe. All rights reserved.</div>
+</footer>
+
+<script>
+  // Smooth reveal on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.step, .issue-card, .price-card, .compare-col, .stat-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+
+  // Stagger children
+  document.querySelectorAll('.steps, .issues-grid, .pricing-grid').forEach(grid => {
+    [...grid.children].forEach((child, i) => {
+      child.style.transitionDelay = `${i * 0.08}s`;
+    });
+  });
+</script>
+</body>
+</html>
