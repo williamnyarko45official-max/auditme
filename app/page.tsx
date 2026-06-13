@@ -150,7 +150,7 @@ export default function LandingPage() {
       {pricingOpen && <PricingModal />}
 
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 48px', borderBottom: '1px solid ' + C.border, background: 'rgba(6,6,8,0.88)', backdropFilter: 'blur(16px)' }}>
-        <a href="#" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 20, color: C.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '0.02em' }}>
+        <a href="/" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 20, color: C.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '0.02em' }}>
           <span style={{ fontSize: 24 }}>⚡</span> auditme
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -395,8 +395,8 @@ export default function LandingPage() {
           <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 14, color: C.accent }}>auditme</span>
         </div>
         <div style={{ display: 'flex', gap: 28 }}>
-          {['docs', 'privacy', 'terms', 'twitter', 'github'].map(l => (
-            <a key={l} href="#" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'capitalize', transition: 'color 0.2s' }}
+          {[{ l: 'docs', href: '/docs' }, { l: 'privacy', href: '/privacy' }, { l: 'terms', href: '/terms' }, { l: 'twitter', href: 'https://twitter.com/auditme' }, { l: 'github', href: 'https://github.com/williamnyarko45official-max/auditme' }].map(({ l, href }) => (
+            <a key={l} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel={href.startsWith('http') ? 'noopener' : undefined} style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, textDecoration: 'none', letterSpacing: '0.06em', textTransform: 'capitalize', transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = C.accent}
               onMouseLeave={e => e.currentTarget.style.color = C.muted}>{l}</a>
           ))}
