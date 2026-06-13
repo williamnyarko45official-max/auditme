@@ -139,6 +139,10 @@ export default function LandingPage() {
   const [error, setError] = useState('')
   const [session, setSession] = useState<any>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const [quickUrl, setQuickUrl] = useState('')
+  const [quickScanning, setQuickScanning] = useState(false)
+  const [quickResult, setQuickResult] = useState<any>(null)
+  const [quickError, setQuickError] = useState('')
   const heroRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -172,6 +176,24 @@ export default function LandingPage() {
     window.addEventListener('mousemove', handleMouse)
     return () => window.removeEventListener('mousemove', handleMouse)
   }, [])
+
+  const handleQuickScan = async () => {
+    if (!quickUrl.trim()) return
+    setQuickScanning(true); setQuickResult(null); setQuickError('')
+    try {
+      const res = await fetch('/api/quick-scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: quickUrl.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Scan failed')
+      setQuickResult(data)
+    } catch (e: any) {
+      setQuickError(e.message)
+    }
+    setQuickScanning(false)
+  }
 
   const handleCheckout = async (plan: 'pro' | 'team') => {
     if (!session?.user) { router.push('/login'); return }
@@ -258,6 +280,87 @@ export default function LandingPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M10 8l6 4-6 4V8z" /></svg>
             See how it works
           </a>
+        </div>
+
+        {/* Quick scan */}
+        <div style={{ margin: '48px auto 0', maxWidth: 580, width: '100%' }}>
+          <div style={{ background: 'rgba(13,13,18,0.6)', border: '1px solid ' + C.border, borderRadius: 12, padding: '20px 24px', backdropFilter: 'blur(8px)' }}>
+            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: '0.12em', marginBottom: 12, textTransform: 'uppercase' }}>Try it now — no signup needed</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input type="text" placeholder="https://github.com/username/repo" value={quickUrl}
+                onChange={e => setQuickUrl(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleQuickScan()}
+                style={{
+                  flex: 1, background: C.bg, border: '1px solid ' + C.border, borderRadius: 8,
+                  padding: '12px 16px', color: C.text, fontFamily: "'Share Tech Mono', monospace",
+                  fontSize: 13, outline: 'none', transition: 'border-color 0.2s',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = C.accent}
+                onBlur={e => e.currentTarget.style.borderColor = C.border} />
+              <button onClick={handleQuickScan} disabled={quickScanning || !quickUrl.trim()}
+                style={{
+                  padding: '12px 24px', background: quickScanning ? C.border : C.accent,
+                  color: quickScanning ? C.muted : C.bg, border: 'none', borderRadius: 8,
+                  fontFamily: "'Share Tech Mono', monospace", fontSize: 13, fontWeight: 700,
+                  cursor: quickScanning || !quickUrl.trim() ? 'not-allowed' : 'pointer',
+                  letterSpacing: '0.04em', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                  boxShadow: quickScanning ? 'none' : '0 4px 16px rgba(0,255,136,0.2)',
+                }}
+                onMouseEnter={e => { if (!quickScanning && quickUrl.trim()) { e.currentTarget.style.background = '#00cc6a'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                onMouseLeave={e => { if (!quickScanning && quickUrl.trim()) { e.currentTarget.style.background = C.accent; e.currentTarget.style.transform = 'translateY(0)' } }}>
+                {quickScanning ? '▋ Scanning...' : 'Quick Audit'}
+              </button>
+            </div>
+            {quickError && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: C.dangerDim, border: '1px solid rgba(255,61,61,0.2)', borderRadius: 8, fontSize: 12, color: C.danger, fontFamily: "'Share Tech Mono', monospace" }}>
+                ⚠ {quickError}
+              </div>
+            )}
+          </div>
+
+          {quickResult && (
+            <div style={{
+              marginTop: 16, background: 'rgba(13,13,18,0.92)', backdropFilter: 'blur(16px)',
+              border: '1px solid ' + (quickResult.score >= 75 ? C.accent + '44' : quickResult.score >= 50 ? C.warn + '44' : C.danger + '44'),
+              borderRadius: 14, overflow: 'hidden',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+            }}>
+              <div style={{ padding: '18px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+                  <div style={{ textAlign: 'center', minWidth: 60 }}>
+                    <div style={{ fontSize: 40, fontWeight: 700, color: quickResult.score >= 75 ? C.accent : quickResult.score >= 50 ? C.warn : C.danger, lineHeight: 1, fontFamily: "'Bebas Neue', sans-serif" }}>{quickResult.score}</div>
+                    <div style={{ fontSize: 9, color: C.muted, fontFamily: "'Share Tech Mono', monospace" }}>/100</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: C.muted, letterSpacing: '0.1em', fontFamily: "'Share Tech Mono', monospace", marginBottom: 2 }}>QUICK SCORE</div>
+                    <div style={{ fontSize: 13, color: C.text, lineHeight: 1.5 }}>{quickResult.summary}</div>
+                  </div>
+                </div>
+                {quickResult.topPriority && (
+                  <div style={{ padding: '8px 12px', background: C.dangerDim, borderRadius: 6, border: '1px solid rgba(255,61,61,0.15)', fontSize: 11, color: C.danger, fontFamily: "'Share Tech Mono', monospace", marginBottom: 12 }}>
+                    🚨 {quickResult.topPriority}
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {quickResult.issues?.slice(0, 3).map((issue: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 0', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 9, lineHeight: '18px' }}>{issue.severity === 'critical' ? '🔴' : issue.severity === 'warning' ? '🟡' : '🟢'}</span>
+                      <div>
+                        <span style={{ fontSize: 9, color: issue.severity === 'critical' ? C.danger : issue.severity === 'warning' ? C.warn : C.accent, fontFamily: "'Share Tech Mono', monospace", letterSpacing: '0.05em' }}>
+                          {issue.severity.toUpperCase()}
+                        </span>
+                        <div style={{ fontSize: 12, color: C.text, marginTop: 1 }}>{issue.title}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid ' + C.border, textAlign: 'center' }}>
+                  <a href="/login" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.accent, textDecoration: 'none' }}>
+                    Sign up for the full report → {quickResult.issues?.length > 3 ? `(${quickResult.issues.length - 3} more issues)` : ''}
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div style={{ margin: '72px auto 0', display: 'flex', gap: 24, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
