@@ -17,13 +17,6 @@ export function isPro(subscription: any) {
   return true
 }
 
-export function isTeam(subscription: any) {
-  if (!subscription) return false
-  if (subscription.status !== 'active') return false
-  if (subscription.plan !== 'team') return false
-  return true
-}
-
 export function canAudit(subscription: any): { allowed: boolean; reason?: string } {
   if (isPro(subscription)) return { allowed: true }
   
