@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchGithubCode } from '@/lib/github'
 import { isPro } from '@/lib/subscription'
-import { callClaude, callGroq, parseLLMResponse, SYSTEM_PROMPT } from '@/lib/llm'
+import { callNvidia, parseLLMResponse, SYSTEM_PROMPT } from '@/lib/llm'
 import {useEffect } from 'react'
 
 const DIFF_PROMPT = (issue: any, code: string) => `You are a senior engineer doing a precise code fix.
@@ -52,8 +52,7 @@ const SEV: Record<string, { color: string; bg: string; icon: string }> = {
 export default function AuditApp({ user, subscription }: { user: any, subscription: any }) {
   const [mode, setMode] = useState<'github' | 'upload'>('github')
   const [githubUrl, setGithubUrl] = useState('')
-  const [llm, setLlm] = useState<'claude' | 'groq'>('claude')
-  const [groqKey, setGroqKey] = useState('')
+  const [llm, setLlm] = useState<'nvidia'>('nvidia')
   const [analyzing, setAnalyzing] = useState(false)
   const [progress, setProgress] = useState('')
   const [result, setResult] = useState<any>(null)
@@ -86,8 +85,7 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
   }
 
   const callLLM = async (userMsg: string, sysMsg: string) => {
-    if (llm === 'groq') return callGroq(userMsg, sysMsg, groqKey)
-    return callClaude(userMsg, sysMsg)
+    return callNvidia(userMsg, sysMsg)
   }
 
   const analyze = async () => {
@@ -113,7 +111,7 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
       }
       setFetchedCode(code)
       setProgress('Running AI analysis...')
-      if (llm === 'groq' && !groqKey) throw new Error('Enter your Groq API key')
+      
       const raw = await callLLM(`Analyze this code for production readiness:\n\n${code}`, SYSTEM_PROMPT)
       const parsed = parseLLMResponse(raw)
       setResult(parsed)
@@ -281,25 +279,14 @@ const handleUpgrade = async (plan: 'pro' | 'team') => {
           <div style={{ marginBottom: '18px' }}>
             <div style={{ fontSize: '11px', color: C.muted, letterSpacing: '0.1em', marginBottom: '8px' }}>ANALYSIS ENGINE</div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              {(['claude', 'groq'] as const).map(l => (
-                <button key={l} onClick={() => setLlm(l)} style={{ padding: '7px 16px', border: `1px solid ${llm === l ? C.accent : C.border}`, borderRadius: '4px', background: llm === l ? C.accentDim : 'transparent', color: llm === l ? C.accent : C.muted, fontFamily: 'monospace', fontSize: '12px', cursor: 'pointer' }}>
-                  {l === 'groq' ? '⚡ Groq' : '🧠 Claude'}
-                </button>
-              ))}
+              <button style={{ padding: '7px 16px', border: `1px solid ${C.accent}`, borderRadius: '4px', background: C.accentDim, color: C.accent, fontFamily: 'monospace', fontSize: '12px', cursor: 'default' }}>
+                🧠 NVIDIA Nemotron-3-Ultra
+              </button>
+            </div>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: C.accent, background: C.accentDim, padding: '10px 14px', borderRadius: '6px', border: `1px solid ${C.accent}22` }}>
+              ✓ Built-in NVIDIA API — no key needed
             </div>
           </div>
-
-          {llm === 'groq' && (
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '11px', color: C.muted, letterSpacing: '0.1em', marginBottom: '6px' }}>GROQ API KEY</div>
-              <input type="password" placeholder="gsk_..." value={groqKey} onChange={e => setGroqKey(e.target.value)} style={inp} />
-            </div>
-          )}
-          {llm === 'claude' && (
-            <div style={{ marginBottom: '18px', fontSize: '12px', color: C.accent, background: C.accentDim, padding: '10px 14px', borderRadius: '6px', border: `1px solid ${C.accent}22` }}>
-              ✓ Built-in Claude API — no key needed
-            </div>
-          )}
 
           {/* Mode toggle */}
           <div style={{ marginBottom: '16px' }}>

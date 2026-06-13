@@ -17,29 +17,15 @@ Return ONLY valid JSON (no markdown, no backticks):
   "topPriority": "<most important thing to fix>"
 }`
 
-export async function callClaude(userMsg: string, systemMsg: string): Promise<string> {
-  const res = await fetch('/api/analyze', {
+export async function callNvidia(userMsg: string, systemMsg: string): Promise<string> {
+  const res = await fetch('/api/nvidia', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userMsg, systemMsg }),
   })
   if (!res.ok) {
     const e = await res.json()
-    throw new Error(e.error || 'Claude API error')
-  }
-  const data = await res.json()
-  return data.result
-}
-
-export async function callGroq(userMsg: string, systemMsg: string, groqKey: string): Promise<string> {
-  const res = await fetch('/api/groq', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userMsg, systemMsg, groqKey }),
-  })
-  if (!res.ok) {
-    const e = await res.json()
-    throw new Error(e.error || 'Groq API error')
+    throw new Error(e.error || 'NVIDIA API error')
   }
   const data = await res.json()
   return data.result
