@@ -60,6 +60,77 @@ function TrendingIcon() {
 const stepIcons = [CodeIcon, SearchIcon, ShieldIcon, TrendingIcon]
 const sectionLabels = ['SECURITY', 'ERROR HANDLING', 'CONFIGURATION', 'PERFORMANCE']
 
+const floatKeyframes = `
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+@keyframes floatDelayed { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+@keyframes pulseGlow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+@keyframes scanLine { 0% { top: 0; } 100% { top: 100%; } }
+`
+
+function ReportPreview() {
+  const sevColor = (s: string) => s === 'critical' ? '#ff3d3d' : s === 'warning' ? '#ffd166' : '#00ff88'
+  const sevBg = (s: string) => s === 'critical' ? 'rgba(255,61,61,0.06)' : 'rgba(255,209,102,0.06)'
+  const issues = [
+    { sev: 'critical', file: '/lib/stripe.js:12', title: 'API key hardcoded in source' },
+    { sev: 'critical', file: '/api/checkout', title: 'Missing error handling' },
+    { sev: 'warning', file: '/api/*', title: 'No rate limiting' },
+    { sev: 'warning', file: '/pages/auth.js:5', title: 'console.log leaking user data' },
+  ]
+  return (
+    <div style={{
+      background: 'rgba(13,13,18,0.92)', backdropFilter: 'blur(16px)',
+      border: '1px solid rgba(0,255,136,0.12)', borderRadius: 14, overflow: 'hidden',
+      width: 380, boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,136,0.04), 0 0 60px rgba(0,255,136,0.03)',
+      position: 'relative', animation: 'float 5s ease-in-out infinite',
+    }}>
+      <div style={{ background: 'linear-gradient(90deg, #13131a, #111118)', borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff5f57' }} />
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ffbd2e' }} />
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#28ca41' }} />
+        <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 10, color: C.muted, marginLeft: 'auto' }}>auditme — report #a3f2c1</span>
+      </div>
+      <div style={{ padding: '16px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, background: 'rgba(255,61,61,0.06)', borderRadius: 10, padding: '12px 16px', border: '1px solid rgba(255,61,61,0.15)' }}>
+          <div style={{ textAlign: 'center', minWidth: 52 }}>
+            <div style={{ fontSize: 38, fontWeight: 700, color: '#ff3d3d', lineHeight: 1, fontFamily: "'Bebas Neue', sans-serif" }}>34</div>
+            <div style={{ fontSize: 9, color: C.muted, fontFamily: "'Share Tech Mono', monospace" }}>/100</div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, color: '#ff3d3d', letterSpacing: '0.1em', fontFamily: "'Share Tech Mono', monospace", marginBottom: 2 }}>PRODUCTION READINESS</div>
+            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>Critical issues found in authentication and payment processing paths.</div>
+          </div>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'conic-gradient(#ff3d3d 34%, rgba(255,61,61,0.15) 34%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#0d0d12', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#ff3d3d', fontWeight: 700, fontFamily: "'Share Tech Mono', monospace" }}>F</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 9, color: C.muted, letterSpacing: '0.1em', fontFamily: "'Share Tech Mono', monospace", marginBottom: 8 }}>TOP ISSUES</div>
+          {issues.map((issue, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, padding: '7px 0', borderBottom: i < issues.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none', alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 8, lineHeight: '18px' }}>{issue.sev === 'critical' ? '🔴' : '🟡'}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 8, color: sevColor(issue.sev), fontFamily: "'Share Tech Mono', monospace", letterSpacing: '0.05em', padding: '1px 5px', borderRadius: 2, background: sevBg(issue.sev), border: '1px solid ' + sevColor(issue.sev) + '22' }}>
+                    {issue.sev === 'critical' ? 'CRITICAL' : 'WARNING'}
+                  </span>
+                  <span style={{ fontSize: 8, color: C.muted, fontStyle: 'italic' }}>{issue.file}</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.text, marginTop: 1 }}>{issue.title}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.03)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 9, color: C.muted, fontFamily: "'Share Tech Mono', monospace" }}>14 files scanned · 6 issues found</span>
+          <span style={{ fontSize: 10, color: C.accent, fontFamily: "'Share Tech Mono', monospace", display: 'flex', alignItems: 'center', gap: 4 }}>
+            View full report <span style={{ fontSize: 12 }}>→</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const router = useRouter()
   const [pricingOpen, setPricingOpen] = useState(false)
@@ -147,6 +218,7 @@ export default function LandingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, overflowX: 'hidden' }}>
+      <style>{floatKeyframes}</style>
       {pricingOpen && <PricingModal />}
 
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 48px', borderBottom: '1px solid ' + C.border, background: 'rgba(6,6,8,0.88)', backdropFilter: 'blur(16px)' }}>
@@ -188,26 +260,29 @@ export default function LandingPage() {
           </a>
         </div>
 
-        <div style={{ margin: '72px auto 0', maxWidth: 680, width: '100%', background: 'linear-gradient(135deg, #0d0d12 0%, #111118 100%)', border: '1px solid ' + C.border, borderRadius: 12, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,136,0.04)' }}>
-          <div style={{ background: 'linear-gradient(90deg, #13131a, #111118)', borderBottom: '1px solid ' + C.border, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28ca41' }} />
-            <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, marginLeft: 'auto' }}>auditme — scanning repo</span>
-          </div>
-          <div style={{ padding: '24px 28px', fontFamily: "'Share Tech Mono', monospace", fontSize: 13, lineHeight: 2 }}>
-            <div><span style={{ color: C.accent }}>$ </span><span style={{ color: C.text }}>auditme scan github.com/yourname/your-saas</span></div>
-            <div style={{ color: C.muted }}>  → Fetching 14 key files...</div>
-            <div style={{ color: C.muted }}>  → Running NVIDIA AI analysis...</div>
-            <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,61,61,0.06)', borderLeft: '2px solid ' + C.danger, borderRadius: '0 4px 4px 0' }}>
-              <span style={{ color: C.muted }}>  SCORE: </span><span style={{ color: C.danger, fontWeight: 700 }}>34 / 100</span>
+        <div style={{ margin: '72px auto 0', display: 'flex', gap: 24, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 420px', maxWidth: 520, background: 'linear-gradient(135deg, #0d0d12 0%, #111118 100%)', border: '1px solid ' + C.border, borderRadius: 12, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,136,0.04)' }}>
+            <div style={{ background: 'linear-gradient(90deg, #13131a, #111118)', borderBottom: '1px solid ' + C.border, padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f57' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28ca41' }} />
+              <span style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, marginLeft: 'auto' }}>auditme — scanning repo</span>
             </div>
-            <div style={{ marginTop: 8 }}><span style={{ color: C.danger }}>🔴 CRITICAL</span><span style={{ color: C.muted }}> — API key hardcoded in /lib/stripe.js:12</span></div>
-            <div><span style={{ color: C.danger }}>🔴 CRITICAL</span><span style={{ color: C.muted }}> — No error handling on /api/checkout</span></div>
-            <div><span style={{ color: C.warn }}>🟡 WARNING</span><span style={{ color: C.muted }}> — No rate limiting on public endpoints</span></div>
-            <div><span style={{ color: C.warn }}>🟡 WARNING</span><span style={{ color: C.muted }}> — console.log in production code</span></div>
-            <div><span style={{ color: C.accent }}>🟢 PASS</span><span style={{ color: C.muted }}> — Dependencies up to date</span></div>
+            <div style={{ padding: '24px 28px', fontFamily: "'Share Tech Mono', monospace", fontSize: 13, lineHeight: 2 }}>
+              <div><span style={{ color: C.accent }}>$ </span><span style={{ color: C.text }}>auditme scan github.com/yourname/your-saas</span></div>
+              <div style={{ color: C.muted }}>  → Fetching 14 key files...</div>
+              <div style={{ color: C.muted }}>  → Running NVIDIA AI analysis...</div>
+              <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,61,61,0.06)', borderLeft: '2px solid ' + C.danger, borderRadius: '0 4px 4px 0' }}>
+                <span style={{ color: C.muted }}>  SCORE: </span><span style={{ color: C.danger, fontWeight: 700 }}>34 / 100</span>
+              </div>
+              <div style={{ marginTop: 8 }}><span style={{ color: C.danger }}>🔴 CRITICAL</span><span style={{ color: C.muted }}> — API key hardcoded in /lib/stripe.js:12</span></div>
+              <div><span style={{ color: C.danger }}>🔴 CRITICAL</span><span style={{ color: C.muted }}> — No error handling on /api/checkout</span></div>
+              <div><span style={{ color: C.warn }}>🟡 WARNING</span><span style={{ color: C.muted }}> — No rate limiting on public endpoints</span></div>
+              <div><span style={{ color: C.warn }}>🟡 WARNING</span><span style={{ color: C.muted }}> — console.log in production code</span></div>
+              <div><span style={{ color: C.accent }}>🟢 PASS</span><span style={{ color: C.muted }}> — Dependencies up to date</span></div>
+            </div>
           </div>
+          <ReportPreview />
         </div>
       </div>
 
