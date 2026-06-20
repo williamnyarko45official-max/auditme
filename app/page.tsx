@@ -55,9 +55,6 @@ function TrendingIcon() {
   )
 }
 
-const stepIcons = [CodeIcon, SearchIcon, ShieldIcon, TrendingIcon]
-const sectionLabels = ['SECURITY', 'ERROR HANDLING', 'CONFIGURATION', 'PERFORMANCE']
-
 const floatKeyframes = `
 @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
 @keyframes floatDelayed { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
