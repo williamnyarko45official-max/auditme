@@ -1,11 +1,8 @@
 'use client'
-import { canAudit, incrementAuditCount } from '@/lib/subscription'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { fetchGithubCode } from '@/lib/github'
-import { isPro } from '@/lib/subscription'
 import { callNvidia, parseLLMResponse, SYSTEM_PROMPT } from '@/lib/llm'
-import { useEffect } from 'react'
 
 const DIFF_PROMPT = (issue: any, code: string) => `You are a senior engineer doing a precise code fix.
 
@@ -49,7 +46,7 @@ const SEV: Record<string, { color: string; bg: string; icon: string }> = {
   pass: { color: C.accent, bg: C.accentDim, icon: '🟢' },
 }
 
-export default function AuditApp({ user, subscription }: { user: any, subscription: any }) {
+export default function AuditApp({ user }: { user: any }) {
   const [mode, setMode] = useState<'github' | 'upload'>('github')
   const [githubUrl, setGithubUrl] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
@@ -88,12 +85,6 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
   }
 
   const analyze = async () => {
-    const { allowed, reason } = canAudit(subscription)
-    if (!allowed) {
-      setError(reason || 'Upgrade to Pro to continue auditing.')
-      return
-    }
-
     setError(''); setResult(null); setDiffs({}); setSavedId(null); setShareMsg('')
     setAnalyzing(true)
 
@@ -122,7 +113,6 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
       }).select('id').single()
       if (!saveErr && data) setSavedId(data.id)
       setSaving(false)
-      await incrementAuditCount(user.id, subscription)
 
     } catch (e: any) { setError(e.message) }
     setAnalyzing(false); setProgress('')
@@ -162,26 +152,6 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
   const scoreColor = result ? (result.score >= 75 ? C.accent : result.score >= 50 ? C.warn : C.danger) : C.muted
   const counts = { critical: 0, warning: 0, pass: 0 } as Record<string, number>
   result?.issues?.forEach((i: any) => counts[i.severity]++)
-  const proUser = isPro(subscription)
-
-  const handleUpgrade = async (plan: 'pro' | 'team') => {
-    try {
-      const res = await fetch('/api/paystack/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan,
-          email: user.email,
-          userId: user.id,
-        }),
-      })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else alert(`Payment error: ${data.error}`)
-    } catch (e: any) {
-      alert(`Error: ${e.message}`)
-    }
-  }
 
   const inp: React.CSSProperties = {
     width: '100%', background: C.bg, border: `1px solid ${C.border}`, borderRadius: '8px',
@@ -212,31 +182,12 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
           <span style={{ color: C.accent, fontSize: '18px', fontWeight: 700, letterSpacing: '0.05em', fontFamily: "'Share Tech Mono', monospace" }}>AuditMe</span>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {!proUser && (
-            <button onClick={() => handleUpgrade('pro')}
-              style={{ padding: '7px 14px', background: C.warnDim, color: C.warn, border: '1px solid rgba(255,209,102,0.3)', borderRadius: '6px', fontFamily: "'Share Tech Mono', monospace", fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,209,102,0.18)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.warnDim; e.currentTarget.style.transform = 'translateY(0)' }}>
-              ⚡ Upgrade to Pro
-            </button>
-          )}
-          {proUser && (
-            <span style={{ fontSize: '11px', color: C.accent, background: C.accentDim, padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(0,255,136,0.2)', fontFamily: "'Share Tech Mono', monospace" }}>
-              ✓ PRO
-            </span>
-          )}
           {savedId && (
-            isPro(subscription) ? (
-              <button onClick={shareReport} style={{ padding: '7px 14px', background: C.accentDim, color: C.accent, border: '1px solid rgba(0,255,136,0.25)', borderRadius: '6px', fontFamily: "'Share Tech Mono', monospace", fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.15)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.accentDim }}>
-                {shareMsg || '🔗 Share Report'}
-              </button>
-            ) : (
-              <button onClick={() => handleUpgrade('pro')} style={{ padding: '7px 14px', background: 'transparent', color: C.muted, border: '1px solid ' + C.border, borderRadius: '6px', fontFamily: "'Share Tech Mono', monospace", fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s' }}>
-                🔒 Share (Pro)
-              </button>
-            )
+            <button onClick={shareReport} style={{ padding: '7px 14px', background: C.accentDim, color: C.accent, border: '1px solid rgba(0,255,136,0.25)', borderRadius: '6px', fontFamily: "'Share Tech Mono', monospace", fontSize: '11px', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.15)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = C.accentDim }}>
+              {shareMsg || '🔗 Share Report'}
+            </button>
           )}
           {saving && <span style={{ fontSize: '11px', color: C.muted, fontFamily: "'Share Tech Mono', monospace" }}>▋ saving...</span>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -272,29 +223,6 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
             </button>
           </div>
         )}
-        {/* Free tier counter */}
-        {!isPro(subscription) && (
-          <div style={{ marginTop: '10px', marginBottom: '20px', fontSize: '11px', color: C.muted, textAlign: 'center', fontFamily: "'Share Tech Mono', monospace" }}>
-            {(() => {
-              const now = new Date()
-              const resetDate = subscription ? new Date(subscription.audit_count_reset) : null
-              const sameMonth = resetDate && now.getMonth() === resetDate.getMonth()
-              const count = sameMonth ? (subscription?.audit_count || 0) : 0
-              const remaining = 3 - count
-              return (
-                <span style={{ color: remaining === 0 ? C.danger : remaining === 1 ? C.warn : C.muted }}>
-                  {remaining === 0
-                    ? '⚠ Free limit reached — '
-                    : `${remaining}/3 free audits remaining this month — `}
-                  <span onClick={() => handleUpgrade('pro')} style={{ color: C.accent, cursor: 'pointer', textDecoration: 'underline' }}>
-                    Upgrade to Pro
-                  </span>
-                </span>
-              )
-            })()}
-          </div>
-        )}
-
         {/* Config card */}
         <div style={{ ...card, padding: '28px', marginBottom: '24px' }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,255,136,0.15)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)' }}
@@ -456,22 +384,11 @@ export default function AuditApp({ user, subscription }: { user: any, subscripti
                         </div>
 
                         {!diff && (
-                          isPro(subscription) ? (
-                            <button onClick={() => generateDiff(issue)} style={{ padding: '9px 18px', background: C.accentDim, color: C.accent, border: '1px solid rgba(0,255,136,0.3)', borderRadius: '8px', fontFamily: "'Share Tech Mono', monospace", fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
-                              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.15)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                              onMouseLeave={e => { e.currentTarget.style.background = C.accentDim; e.currentTarget.style.transform = 'translateY(0)' }}>
-                              🔧 Generate Copy-Ready Diff
-                            </button>
-                          ) : (
-                            <div style={{ padding: '14px 18px', background: C.warnDim, border: '1px solid rgba(255,209,102,0.2)', borderRadius: '8px', fontSize: '12px', color: C.warn, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: "'Share Tech Mono', monospace" }}>
-                              <span>🔒 Copy-ready diffs are a Pro feature</span>
-                              <button onClick={() => handleUpgrade('pro')} style={{ padding: '5px 14px', background: C.warn, color: C.bg, border: 'none', borderRadius: '6px', fontFamily: "'Share Tech Mono', monospace", fontSize: '11px', cursor: 'pointer', fontWeight: 700, transition: 'all 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-                                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                                Upgrade →
-                              </button>
-                            </div>
-                          )
+                          <button onClick={() => generateDiff(issue)} style={{ padding: '9px 18px', background: C.accentDim, color: C.accent, border: '1px solid rgba(0,255,136,0.3)', borderRadius: '8px', fontFamily: "'Share Tech Mono', monospace", fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,136,0.15)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = C.accentDim; e.currentTarget.style.transform = 'translateY(0)' }}>
+                            🔧 Generate Copy-Ready Diff
+                          </button>
                         )}
                         {diff?.loading && <div style={{ fontSize: '12px', color: C.muted, fontFamily: "'Share Tech Mono', monospace" }}>▋ Generating fix...</div>}
                         {diff?.error && <div style={{ fontSize: '12px', color: C.danger, fontFamily: "'Share Tech Mono', monospace" }}>{diff.error}</div>}

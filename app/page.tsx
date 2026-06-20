@@ -1,7 +1,5 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 
 const C = {
   bg: '#060608', surface: '#0d0d12', surface2: '#111118',
@@ -132,22 +130,12 @@ function ReportPreview() {
 }
 
 export default function LandingPage() {
-  const router = useRouter()
-  const [pricingOpen, setPricingOpen] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'team' | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [session, setSession] = useState<any>(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [quickUrl, setQuickUrl] = useState('')
   const [quickScanning, setQuickScanning] = useState(false)
   const [quickResult, setQuickResult] = useState<any>(null)
   const [quickError, setQuickError] = useState('')
   const heroRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s))
-  }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -195,60 +183,16 @@ export default function LandingPage() {
     setQuickScanning(false)
   }
 
-  const handleCheckout = async (plan: 'pro' | 'team') => {
-    if (!session?.user) { router.push('/login'); return }
-    setLoading(true); setError('')
-    try {
-      const res = await fetch('/api/paystack/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, email: session.user.email, userId: session.user.id }),
-      })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else setError(data.error || 'Checkout failed')
-    } catch (e: any) {
-      setError(e.message)
-    }
-    setLoading(false)
-  }
-
-  const PricingModal = () => (
-    <div onClick={() => setPricingOpen(false)}
-      style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}>
-      <div onClick={e => e.stopPropagation()}
-        style={{ background: 'linear-gradient(135deg, #0d0d12 0%, #111118 100%)', border: '1px solid ' + C.border, borderRadius: 20, padding: 40, maxWidth: 420, width: '90%', position: 'relative', boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,136,0.06)' }}>
-        <button onClick={() => setPricingOpen(false)}
-          style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid ' + C.border, borderRadius: '50%', width: 32, height: 32, color: C.muted, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.accentDim, border: '1px solid rgba(0,255,136,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24 }}>⚡</div>
-          <div style={{ fontSize: 24, color: C.text, fontWeight: 700, marginBottom: 8 }}>Upgrade to {selectedPlan === 'pro' ? 'Pro' : 'Team'}</div>
-          <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.7 }}>
-            {selectedPlan === 'pro'
-              ? 'Unlimited audits, private repos, copy-ready diffs, and shareable reports.'
-              : 'Everything in Pro plus 5 team seats, shared dashboard, and priority support.'}
-          </div>
-        </div>
-        <button onClick={() => selectedPlan && handleCheckout(selectedPlan)} disabled={loading}
-          style={{ width: '100%', padding: 15, background: loading ? C.border : C.accent, color: loading ? C.muted : C.bg, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', letterSpacing: '0.03em', transition: 'all 0.2s' }}>
-          {loading ? 'Processing...' : 'Continue to Payment →'}
-        </button>
-        {error && <div style={{ marginTop: 12, padding: 12, background: C.dangerDim, border: '1px solid ' + C.danger + '33', borderRadius: 8, fontSize: 12, color: C.danger, textAlign: 'center' }}>{error}</div>}
-      </div>
-    </div>
-  )
-
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, overflowX: 'hidden' }}>
       <style>{floatKeyframes}</style>
-      {pricingOpen && <PricingModal />}
 
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 48px', borderBottom: '1px solid ' + C.border, background: 'rgba(6,6,8,0.88)', backdropFilter: 'blur(16px)' }}>
         <a href="/" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 20, color: C.accent, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '0.02em' }}>
           <span style={{ fontSize: 24 }}>⚡</span> auditme
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {[['#how', 'how it works'], ['#issues', 'what we catch'], ['#pricing', 'pricing']].map(([href, text]) => (
+          {[['#how', 'how it works'], ['#issues', 'what we catch']].map(([href, text]) => (
             <a key={text} href={href} style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 12, color: C.muted, textDecoration: 'none', letterSpacing: '0.05em', transition: 'color 0.2s' }}
               onMouseEnter={e => e.currentTarget.style.color = C.accent}
               onMouseLeave={e => e.currentTarget.style.color = C.muted}>{text}</a>
@@ -472,85 +416,6 @@ export default function LandingPage() {
       </div>
 
       <div style={divide} />
-
-      <div id="pricing" style={sections}>
-        <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.accent, letterSpacing: '0.18em', marginBottom: 12, textTransform: 'uppercase' }}>// Pricing</div>
-        <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(40px, 5.5vw, 68px)', lineHeight: 0.93, color: C.text, marginBottom: 20, letterSpacing: '0.015em' }}>PAY LESS THAN<br />YOUR BUG COSTS.</h2>
-        <p style={{ fontSize: 16, color: C.muted, maxWidth: 480, lineHeight: 1.7 }}>One missed security issue costs more than a year of AuditMe. Start free, upgrade when you need more.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginTop: 48 }}>
-          <div className="reveal" style={{
-            ...card3d, padding: '36px 32px', opacity: 0, transform: 'translateY(24px)',
-            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = 'none' }}>
-            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, letterSpacing: '0.12em', marginBottom: 16, textTransform: 'uppercase' }}>Free</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, color: C.text, lineHeight: 1, marginBottom: 4 }}>$0</div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>forever, no card needed</div>
-            <div style={{ marginBottom: 28, borderTop: '1px solid ' + C.border, paddingTop: 4 }}>
-              {[['3 public repo audits / month', true], ['Full security scan', true], ['Scored report', true], ['Copy-ready diffs', false], ['Private repos', false]].map((f, i) => (
-                <div key={i} style={{ fontSize: 14, color: C.muted, padding: '9px 0', borderBottom: '1px solid ' + C.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{f[0] as string}</span>
-                  <span style={{ color: f[1] ? C.accent : '#333345', fontSize: 16 }}>{f[1] ? '✓' : '—'}</span>
-                </div>
-              ))}
-            </div>
-            <a href="/login" style={{ display: 'block', width: '100%', padding: 13, fontSize: 13, letterSpacing: '0.06em', fontWeight: 600, borderRadius: 8, background: 'transparent', color: C.muted, border: '1px solid ' + C.border, textAlign: 'center', textDecoration: 'none', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accent }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted }}>Start Free</a>
-          </div>
-
-          <div className="reveal" style={{
-            position: 'relative', padding: '36px 32px', borderRadius: 12,
-            background: 'linear-gradient(135deg, rgba(0,255,136,0.04) 0%, rgba(0,0,0,0) 100%)',
-            border: '1px solid rgba(0,255,136,0.35)', opacity: 0, transform: 'translateY(24px)',
-            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s',
-            boxShadow: '0 0 40px rgba(0,255,136,0.06)',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.6)'; e.currentTarget.style.boxShadow = '0 16px 50px rgba(0,255,136,0.1)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.35)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(0,255,136,0.06)' }}>
-            <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, ' + C.accent + ' 0%, #00cc6a 100%)', color: C.bg, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', padding: '4px 16px', borderRadius: 20, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Most Popular</div>
-            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.accent, letterSpacing: '0.12em', marginBottom: 16, textTransform: 'uppercase' }}>Pro</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, color: C.text, lineHeight: 1, marginBottom: 4 }}>$12</div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>per month, cancel anytime</div>
-            <div style={{ marginBottom: 28, borderTop: '1px solid rgba(0,255,136,0.12)', paddingTop: 4 }}>
-              {['Unlimited audits', 'Public + private repos', 'Copy-ready code diffs', 'PR title + description', 'Audit history', 'Shareable report links'].map((f, i) => (
-                <div key={i} style={{ fontSize: 14, color: C.text, padding: '9px 0', borderBottom: '1px solid rgba(0,255,136,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{f}</span><span style={{ color: C.accent, fontSize: 16 }}>✓</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => { setSelectedPlan('pro'); setPricingOpen(true) }}
-              style={{ width: '100%', padding: 13, fontSize: 13, letterSpacing: '0.06em', fontWeight: 700, borderRadius: 8, border: 'none', background: C.accent, color: C.bg, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 16px rgba(0,255,136,0.25)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#00cc6a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.accent; e.currentTarget.style.transform = 'translateY(0)' }}>Get Pro →</button>
-          </div>
-
-          <div className="reveal" style={{
-            ...card3d, padding: '36px 32px', opacity: 0, transform: 'translateY(24px)',
-            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.2)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = 'none' }}>
-            <div style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 11, color: C.muted, letterSpacing: '0.12em', marginBottom: 16, textTransform: 'uppercase' }}>Team</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, color: C.text, lineHeight: 1, marginBottom: 4 }}>$39</div>
-            <div style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>per month, up to 5 devs</div>
-            <div style={{ marginBottom: 28, borderTop: '1px solid ' + C.border, paddingTop: 4 }}>
-              {['Everything in Pro', '5 team seats', 'Shared audit dashboard', 'GitHub PR bot (coming soon)', 'Priority support', 'Custom checks'].map((f, i) => (
-                <div key={i} style={{ fontSize: 14, color: C.text, padding: '9px 0', borderBottom: '1px solid ' + C.border, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{f}</span><span style={{ color: C.accent, fontSize: 16 }}>✓</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => { setSelectedPlan('team'); setPricingOpen(true) }}
-              style={{ width: '100%', padding: 13, fontSize: 13, letterSpacing: '0.06em', fontWeight: 600, borderRadius: 8, background: 'transparent', color: C.muted, border: '1px solid ' + C.border, cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accent }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted }}>Get Team</button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ ...divide }} />
 
       <div style={{ textAlign: 'center', padding: '100px 24px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '800px', height: '400px', background: 'radial-gradient(ellipse at center bottom, rgba(0,255,136,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />

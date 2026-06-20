@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { use } from 'react'
-import { isPro } from '@/lib/subscription'
 
 const C = {
   bg: '#060608', surface: '#0d0d12', surface2: '#111118',
@@ -37,18 +36,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
       if (error || !data) { setState('gate'); return }
 
-      const isOwner = data.user_id === user.id
-      if (isOwner) { setReport(data); setState('report'); return }
-
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
-      if (sub && isPro(sub)) { setReport(data); setState('report'); return }
-
-      setState('gate')
+      setReport(data)
+      setState('report')
     })()
   }, [id])
 
@@ -64,7 +53,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }}>🔒</div>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 40, color: C.text, marginBottom: 12, letterSpacing: '0.02em' }}>RESTRICTED</h1>
         <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.7, marginBottom: 28 }}>
-          This report requires a Pro subscription to view. Sign in or upgrade to access it.
+          Sign in to view this report.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <a href="/login" style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 13, fontWeight: 600, background: C.accent, color: C.bg, border: 'none', borderRadius: 8, padding: '12px 28px', textDecoration: 'none', letterSpacing: '0.06em', transition: 'all 0.2s' }}
