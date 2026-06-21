@@ -20,6 +20,23 @@ export const metadata: Metadata = {
     icon: { url: "/icon.svg", type: "image/svg+xml" },
     apple: "/apple-icon.svg",
   },
+  openGraph: {
+    title: "AuditMe — Your Coding Agent's Security Sidekick",
+    description:
+      "MCP server, LSP server, CLI, and web app for production-readiness analysis. Catches secrets, code smells, and bugs before you ship. Free and open source.",
+    url: "https://auditme-six.vercel.app",
+    siteName: "AuditMe",
+    images: [{ url: "/opengraph-image.svg", width: 1200, height: 630 }],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AuditMe — Your Coding Agent's Security Sidekick",
+    description:
+      "MCP server, LSP server, CLI, and web app for production-readiness analysis. Free and open source.",
+    images: ["/opengraph-image.svg"],
+  },
 };
 
 export default function RootLayout({
