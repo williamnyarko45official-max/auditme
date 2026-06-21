@@ -427,8 +427,8 @@ export default function LandingPage() {
             { name: 'Windsurf', desc: 'Configure the MCP server in Windsurf\'s settings. Your AI flow catches security issues mid-edit.', icon: '🏄' },
             { name: 'opencode', desc: 'Add the MCP server or LSP server to opencode.json. Instant diagnostics as you code.', icon: '⌨' },
             { name: 'Claude Desktop', desc: 'Add the MCP server to claude_desktop_config.json. Claude audits your code on request.', icon: '🤖' },
-            { name: 'VS Code', desc: 'Coming soon — full VS Code extension with inline diagnostics and one-click full audits.', icon: '📦' },
-            { name: 'CLI', desc: 'Coming soon — auditme watch and auditme scan for CI/CD pipelines and local development.', icon: '🖥' },
+            { name: 'VS Code', desc: 'Full VS Code extension with inline diagnostics and one-click full audits. Install from the marketplace or side-load from vscode/.', icon: '📦' },
+            { name: 'CLI', desc: 'Installed via npx or npm. Commands: scan (full NVIDIA audit), check (local regex), watch (file watcher), init (config scaffold).', icon: '🖥' },
           ].map((item, i) => (
             <div key={i} className="reveal" style={{
               background: C.surface, border: '1px solid ' + C.border, borderRadius: 10, padding: '22px 22px',

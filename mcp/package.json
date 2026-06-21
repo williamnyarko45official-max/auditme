@@ -2,6 +2,8 @@
   "name": "@auditme/mcp",
   "version": "0.1.0",
   "description": "AuditMe MCP server — agent-paired code analysis powered by NVIDIA Nemotron",
+  "license": "MIT",
+  "repository": "williamnyarko45official-max/auditme",
   "type": "module",
   "bin": {
     "auditme-mcp": "dist/index.js"

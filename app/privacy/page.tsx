@@ -48,7 +48,7 @@ export default function PrivacyPage() {
 
         {[
           { title: 'Data Collection', body: ['We collect your email address and GitHub username when you sign up. When you audit a repo, we temporarily store the repository URL and the generated audit report. We never store your source code beyond the duration of the analysis.'] },
-          { title: 'Data Sharing', body: ['We do not sell your data. Your audit results are stored securely and only accessible by you. Payment processing is handled by Paystack — we never see your card details.'] },
+          { title: 'Data Sharing', body: ['We do not sell your data. Your audit results are stored securely and only accessible by you. Code sent for analysis goes directly to NVIDIA\'s API — it never touches our servers. We do not train on or mine your code.'] },
           { title: 'Contact', body: ['For privacy inquiries, email privacy@auditme.app. We respond within 48 hours.'] },
         ].map((section, i) => (
           <div key={i} style={{

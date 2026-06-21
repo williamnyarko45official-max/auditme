@@ -2,6 +2,8 @@
   "name": "@auditme/cli",
   "version": "0.1.0",
   "description": "AuditMe CLI — production-readiness analysis from your terminal",
+  "license": "MIT",
+  "repository": "williamnyarko45official-max/auditme",
   "type": "module",
   "bin": {
     "auditme": "dist/index.js"

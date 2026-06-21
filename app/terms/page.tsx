@@ -48,7 +48,7 @@ export default function TermsPage() {
 
         {[
           { title: 'Service Usage', body: ['AuditMe provides automated code analysis for production readiness. Results are for informational purposes and should not be the sole basis for security decisions. Always review AI-generated fixes before applying them.'] },
-          { title: 'Subscriptions', body: ['Paid plans billed monthly. Cancel anytime — access continues until the end of your billing period. Refunds provided within 14 days of purchase for annual plans.'] },
+          { title: 'Open Source', body: ['AuditMe is free and open source software. The source code is available on GitHub. All packages are provided under the MIT license. There are no paid plans, subscriptions, or tiered features.'] },
           { title: 'Limitation of Liability', body: ['AuditMe is provided "as is" without warranty. We are not liable for damages arising from use of the service, including issues missed during analysis or issues introduced by applying generated fixes.'] },
         ].map((section, i) => (
           <div key={i} style={{

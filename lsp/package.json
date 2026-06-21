@@ -2,6 +2,8 @@
   "name": "@auditme/lsp",
   "version": "0.1.0",
   "description": "AuditMe LSP server — inline production-readiness diagnostics for opencode and VS Code",
+  "license": "MIT",
+  "repository": "williamnyarko45official-max/auditme",
   "type": "module",
   "bin": {
     "auditme-lsp": "dist/server.js"
