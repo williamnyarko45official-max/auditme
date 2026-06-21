@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "mcp": {
+    "auditme": {
+      "type": "local",
+      "command": ["npx", "-y", "@auditme/mcp"],
+      "enabled": true
+    }
+  },
+  "lsp": {
+    "auditme": {
+      "command": ["npx", "-y", "@auditme/lsp"],
+      "extensions": [".ts", ".tsx", ".js", ".jsx", ".json"]
+    }
+  },
+  "references": {
+    "docs": {
+      "path": ".",
+      "description": "AuditMe project root — use for project structure, naming, and conventions"
+    },
+    "mcp": {
+      "path": "mcp",
+      "description": "AuditMe MCP server package — context for MCP tool implementation"
+    },
+    "lsp": {
+      "path": "lsp",
+      "description": "AuditMe LSP server package — context for LSP check patterns and server setup"
+    },
+    "cli": {
+      "path": "cli",
+      "description": "AuditMe CLI package — CLI commands and implementation"
+    }
+  }
+}
