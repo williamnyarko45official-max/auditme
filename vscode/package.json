@@ -1,0 +1,72 @@
+{
+  "name": "auditme",
+  "displayName": "AuditMe",
+  "description": "Production-readiness diagnostics — secrets, code smells, and full NVIDIA AI audits",
+  "version": "0.1.0",
+  "publisher": "auditme",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Security",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "audit",
+    "security",
+    "secrets",
+    "code quality",
+    "production readiness"
+  ],
+  "icon": "icon.png",
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:json",
+    "onLanguage:yaml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "auditme.fullAudit",
+        "title": "AuditMe: Full AI Audit"
+      },
+      {
+        "command": "auditme.runLocalChecks",
+        "title": "AuditMe: Run Local Checks"
+      }
+    ],
+    "configuration": {
+      "title": "AuditMe",
+      "properties": {
+        "auditme.nvidiaApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "NVIDIA API key for full AI-powered audits. Get one at https://build.nvidia.com"
+        },
+        "auditme.enableLocalChecks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable local regex-based checks for secrets and code smells"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc",
+    "watch": "tsc -watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5"
+  }
+}

@@ -4,7 +4,7 @@
   "description": "AuditMe LSP server — inline production-readiness diagnostics for opencode and VS Code",
   "type": "module",
   "bin": {
-    "auditme-lsp": "./dist/server.js"
+    "auditme-lsp": "dist/server.js"
   },
   "files": ["dist"],
   "scripts": {

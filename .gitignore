@@ -49,3 +49,12 @@ next-env.d.ts
 # lsp
 /lsp/node_modules
 /lsp/dist
+
+# cli
+/cli/node_modules
+/cli/dist
+
+# vscode
+/vscode/node_modules
+/vscode/out
+/vscode/*.vsix

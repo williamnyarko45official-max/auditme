@@ -1,19 +1,19 @@
 {
-  "name": "@auditme/mcp",
+  "name": "@auditme/cli",
   "version": "0.1.0",
-  "description": "AuditMe MCP server — agent-paired code analysis powered by NVIDIA Nemotron",
+  "description": "AuditMe CLI — production-readiness analysis from your terminal",
   "type": "module",
   "bin": {
-    "auditme-mcp": "dist/index.js"
+    "auditme": "dist/index.js"
   },
   "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.16.0"
+    "chokidar": "^4.0.3",
+    "commander": "^12.1.0"
   },
   "devDependencies": {
     "@types/node": "^22",
