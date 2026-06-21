@@ -45,3 +45,7 @@ next-env.d.ts
 # mcp
 /mcp/node_modules
 /mcp/dist
+
+# lsp
+/lsp/node_modules
+/lsp/dist

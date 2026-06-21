@@ -1,0 +1,23 @@
+{
+  "name": "@auditme/lsp",
+  "version": "0.1.0",
+  "description": "AuditMe LSP server — inline production-readiness diagnostics for opencode and VS Code",
+  "type": "module",
+  "bin": {
+    "auditme-lsp": "./dist/server.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  }
+}
