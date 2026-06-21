@@ -7,10 +7,6 @@ const C = {
   text: '#dde1f0', muted: '#555570',
 }
 
-const floatKeyframes = `
-@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
-`
-
 const cardHover = {
   background: 'linear-gradient(135deg, #0d0d12 0%, #111118 100%)',
   border: '1px solid ' + C.border,
@@ -20,10 +16,84 @@ const cardHover = {
   marginBottom: 16,
 }
 
+const codeBlock = (code: string) => (
+  <div style={{
+    background: C.bg, border: '1px solid ' + C.border, borderRadius: 8,
+    padding: '14px 16px', fontFamily: "'Share Tech Mono', monospace", fontSize: 12,
+    lineHeight: 1.7, whiteSpace: 'pre', overflow: 'auto', color: C.muted, margin: '12px 0',
+  }}>{code}</div>
+)
+
+const sections = [
+  {
+    title: 'Quick Start — MCP Server',
+    body: [
+      'AuditMe\'s MCP server adds code audit tools to your AI coding agent (Cursor, Windsurf, opencode, Claude Desktop). Your agent can call audit_code, audit_file, and audit_github as native tools.',
+      'Set your NVIDIA_API_KEY in your environment (get one at https://build.nvidia.com).',
+      codeBlock('# Add to ~/.cursor/mcp.json, opencode.json, or claude_desktop_config.json\n{\n  "mcpServers": {\n    "auditme": {\n      "command": "npx",\n      "args": ["-y", "@auditme/mcp"],\n      "env": {\n        "NVIDIA_API_KEY": "nvapi-..."\n      }\n    }\n  }\n}'),
+      'Then restart your agent and ask it to audit your code. Example: "Run audit_github on https://github.com/username/repo".',
+    ],
+  },
+  {
+    title: 'Quick Start — LSP Server',
+    body: [
+      'The LSP server runs in your editor and provides real-time inline diagnostics. It catches secrets, console.log, debugger, TODO, FIXME, and missing try/catch patterns instantly — no API call needed.',
+      codeBlock('# Add to opencode.json\n{\n  "lsp": {\n    "servers": [{\n      "name": "auditme",\n      "command": "npx",\n      "args": ["-y", "@auditme/lsp"]\n    }]\n  }\n}'),
+      'With NVIDIA_API_KEY set in your environment, you also get the auditme.fullAudit command for on-demand AI analysis of any file.',
+    ],
+  },
+  {
+    title: 'Quick Start — CLI Tool',
+    body: [
+      'The CLI gives you four commands for terminal-based code analysis.',
+      codeBlock('# Full NVIDIA audit of a public GitHub repo\nnpx @auditme/cli scan https://github.com/username/repo\n\n# Quick local checks on files (secrets, code smells)\nnpx @auditme/cli check src/**/*.ts\n\n# Watch a directory for changes\nnpx @auditme/cli watch src/\n\n# Generate config files\nnpx @auditme/cli init'),
+    ],
+  },
+  {
+    title: 'Quick Start — Web App',
+    body: [
+      'The web app at https://auditme-six.vercel.app lets you paste any public GitHub URL and get a scored report in under 60 seconds. No install required.',
+      'Sign in with GitHub to access your audit history and saved reports.',
+    ],
+  },
+  {
+    title: 'VS Code Extension',
+    body: [
+      'The VS Code extension is built and ready for side-loading. It provides:',
+      '  • Inline diagnostics on file open/save (local regex checks)',
+      '  • "AuditMe: Full AI Audit" command for NVIDIA analysis',
+      '  • Configurable NVIDIA API key via VS Code settings',
+      'Install from the vscode/ directory or wait for the VS Code Marketplace listing.',
+    ],
+  },
+  {
+    title: 'NVIDIA API Key',
+    body: [
+      'Full AI audits require an NVIDIA API key. Get one for free at https://build.nvidia.com (the Nemotron model is included in the free tier).',
+      'Set it as an environment variable:',
+      codeBlock('export NVIDIA_API_KEY=nvapi-...'),
+      'Or set it in your editor\'s config (e.g., auditme.nvidiaApiKey in VS Code settings).',
+      'Without a key, local checks still work — secrets, console.log, debugger, TODO, and code smells are detected via regex with no API dependency.',
+    ],
+  },
+  {
+    title: 'Architecture',
+    body: [
+      'AuditMe has four integration surfaces powered by the same NVIDIA Nemotron engine:',
+      '  • MCP Server — for AI coding agents (Cursor, Windsurf, opencode, Claude Desktop)',
+      '  • LSP Server — for inline editor diagnostics (opencode, VS Code)',
+      '  • CLI — for terminal and CI/CD pipelines',
+      '  • Web App — for browser-based audits',
+      '',
+      'Local checks (secrets, code smells) run client-side with zero API calls. Full AI audits go through NVIDIA\'s Nemotron-3-Ultra model.',
+      'All packages are open source at github.com/williamnyarko45official-max/auditme.',
+    ],
+  },
+]
+
 export default function DocsPage() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{floatKeyframes}</style>
       <div style={{ position: 'fixed', width: '600px', height: '600px', background: 'radial-gradient(circle at 50% 40%, rgba(0,255,136,0.04) 0%, transparent 70%)', top: '20%', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }} />
 
       <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 48px', borderBottom: '1px solid ' + C.border, background: 'rgba(6,6,8,0.88)', backdropFilter: 'blur(16px)' }}>
@@ -44,18 +114,10 @@ export default function DocsPage() {
           onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>← Back</Link>
         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, color: C.text, marginBottom: 4, letterSpacing: '0.02em', background: 'linear-gradient(135deg, ' + C.accent + ' 0%, #00ccff 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DOCS</h1>
-        <p style={{ color: C.muted, fontSize: 14, marginBottom: 48, lineHeight: 1.6, fontFamily: "'Share Tech Mono', monospace" }}>Everything you need to know about AuditMe.</p>
+        <p style={{ color: C.muted, fontSize: 14, marginBottom: 48, lineHeight: 1.6, fontFamily: "'Share Tech Mono', monospace" }}>Everything you need to add AuditMe to your coding agent.</p>
 
-        {[
-          { title: 'Getting Started', body: ['Paste any public GitHub URL into the audit box and click "Audit This Code". You\'ll get a full production readiness report in under 60 seconds.', 'For private repos, connect your GitHub account. We request read-only access to your repositories.'] },
-          { title: 'Audit Results', body: ['Each audit returns a score from 0–100, a summary, and a list of issues grouped by severity. Click any issue to see a detailed explanation and suggested fix. Pro users can generate copy-ready code diffs.'] },
-          { title: 'Plans & Limits', body: ['Free tier: 3 audits per month, public repos only. Pro: unlimited audits, private repos, copy-ready diffs, and shareable reports. Team: everything in Pro plus 5 seats and priority support.'] },
-        ].map((section, i) => (
-          <div key={i} style={{
-            ...cardHover,
-            animation: 'float 5s ease-in-out infinite',
-            animationDelay: (i * 0.3) + 's',
-          }}
+        {sections.map((section, i) => (
+          <div key={i} style={cardHover}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(0,255,136,0.25)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)' }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = 'none' }}>
             <h2 style={{ fontFamily: "'Share Tech Mono', monospace", fontSize: 14, color: C.accent, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
